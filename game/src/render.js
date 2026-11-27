@@ -119,14 +119,81 @@ function drawHills(ctx, world) {
     ctx.fillRect(bx + 86, GROUND_Y - 130, 48, 70);
   }
   if (world.stageIndex === 2) {
-    ctx.fillStyle = '#7a4a21';
+    // A real kitchen: a tiled wall across the whole frame (it scrolls slowly
+    // with the world), a stove with fire, a counter and hanging pans.
+    const wallTop = GROUND_Y - 300;
+    const tile = 44;
+    const offset = -((world.scroll * 0.6) % tile);
+    for (let ty = wallTop; ty < GROUND_Y; ty += tile) {
+      const row = Math.floor((ty - wallTop) / tile);
+      for (let tx = offset - tile; tx < VIEW_WIDTH + tile; tx += tile) {
+        const col = Math.floor((tx - offset) / tile);
+        ctx.fillStyle = (row + col) % 2 === 0 ? '#f3dfba' : '#d98a4a';
+        ctx.fillRect(tx, ty, tile, tile);
+      }
+    }
+    ctx.fillStyle = '#8a5a2b';
+    ctx.fillRect(0, GROUND_Y - 14, VIEW_WIDTH, 14);
+    // Stove + counter prop, scrolling like the R1 barn; drawn twice (one
+    // period apart) so a stove is in frame at any scroll.
+    const drawKitchenProp = (kx) => {
+      // Hood above the stove.
+      ctx.fillStyle = '#5b5b5b';
+      ctx.fillRect(kx + 40, GROUND_Y - 232, 130, 30);
+      ctx.fillRect(kx + 82, GROUND_Y - 262, 46, 30);
+      // Stove body with a glowing firebox.
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(kx + 30, GROUND_Y - 202, 150, 142);
+      const glow = 0.6 + Math.sin(world.time * 5 + kx) * 0.25;
+      ctx.fillStyle = `rgba(255, 120, 20, ${glow})`;
+      ctx.fillRect(kx + 48, GROUND_Y - 172, 114, 78);
+      ctx.fillStyle = '#ffaa28';
+      ctx.beginPath();
+      ctx.moveTo(kx + 58, GROUND_Y - 100);
+      ctx.lineTo(kx + 74, GROUND_Y - 158);
+      ctx.lineTo(kx + 88, GROUND_Y - 100);
+      ctx.lineTo(kx + 104, GROUND_Y - 158);
+      ctx.lineTo(kx + 118, GROUND_Y - 100);
+      ctx.lineTo(kx + 132, GROUND_Y - 158);
+      ctx.lineTo(kx + 152, GROUND_Y - 100);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#cfcfcf';
+      ctx.fillRect(kx + 36, GROUND_Y - 196, 138, 8);
+      // Wooden counter with a pot and a bowl.
+      ctx.fillStyle = '#8a5a2b';
+      ctx.fillRect(kx + 220, GROUND_Y - 110, 210, 50);
+      ctx.fillStyle = '#6b4423';
+      ctx.fillRect(kx + 220, GROUND_Y - 118, 210, 10);
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(kx + 250, GROUND_Y - 152, 52, 36);
+      ctx.fillStyle = '#c96a1e';
+      ctx.beginPath();
+      ctx.ellipse(kx + 336, GROUND_Y - 128, 26, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Hanging pans from the wall top.
+      ctx.strokeStyle = '#3a3a3a';
+      ctx.lineWidth = 4;
+      for (const hx of [kx + 250, kx + 330, kx + 400]) {
+        ctx.beginPath();
+        ctx.moveTo(hx, wallTop + 6);
+        ctx.lineTo(hx, wallTop + 52);
+        ctx.stroke();
+        ctx.fillStyle = '#3a3a3a';
+        ctx.beginPath();
+        ctx.arc(hx, wallTop + 66, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
     const kx = 880 - ((world.scroll * 0.6) % 1400);
-    ctx.fillRect(kx, GROUND_Y - 230, 260, 170);
-    ctx.fillStyle = '#ffd76a';
-    ctx.fillRect(kx + 24, GROUND_Y - 200, 60, 60);
-    ctx.fillRect(kx + 176, GROUND_Y - 200, 60, 60);
-    ctx.fillStyle = '#3a3a3a';
-    ctx.fillRect(kx + 100, GROUND_Y - 120, 60, 60);
+    drawKitchenProp(kx);
+    drawKitchenProp(kx + 1400);
+    // Warm light spilling from the stove.
+    const glow = ctx.createRadialGradient(kx + 105, GROUND_Y - 140, 20, kx + 105, GROUND_Y - 140, 300);
+    glow.addColorStop(0, 'rgba(255, 180, 80, 0.22)');
+    glow.addColorStop(1, 'rgba(255, 180, 80, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(kx - 200, wallTop - 40, 700, 420);
   }
 }
 
@@ -136,6 +203,14 @@ function drawGround(ctx, world) {
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, VIEW_HEIGHT - GROUND_Y);
   ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 8);
+  if (world.stageIndex === 2) {
+    // Wooden kitchen floor: plank seams across the ground strip.
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+    ctx.fillRect(0, GROUND_Y + 46, VIEW_WIDTH, 4);
+    ctx.fillRect(0, GROUND_Y + 90, VIEW_WIDTH, 4);
+    const joint = -((world.scroll * 0.6) % 140);
+    for (let jx = joint; jx < VIEW_WIDTH; jx += 140) ctx.fillRect(jx, GROUND_Y + 8, 4, 124);
+  }
   // Scattered leaves, placed by scroll.
   ctx.fillStyle = '#e8862e';
   for (let i = 0; i < 14; i += 1) {

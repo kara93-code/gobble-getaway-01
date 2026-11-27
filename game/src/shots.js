@@ -7,6 +7,7 @@ import { ESCAPE_METERS, STEP } from './config.js';
 import { EVENT_ESCAPED, EVENT_OVER, resetWorld, runSpeed, worldStep } from './world.js';
 import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
 import { KIND_HAY, KIND_KNIFE } from './hazards.js';
+import { TURKEY_WIDTH } from './turkey.js';
 
 const SAMPLE = 1 / 30;
 
@@ -18,23 +19,30 @@ function autopilot(world) {
     .sort((a, b) => a.x - b.x)[0];
   if (!ahead) return { jump: false, slideHeld: false };
   const gap = ahead.x - turkey.x;
+  // R2: the turkey's box is 192 wide, so the jump/slide timing is measured
+  // from the box's FRONT edge — the same 0.62x-speed timing as R1, just
+  // shifted by the wider body.
+  const gapFront = ahead.x - (turkey.x + TURKEY_WIDTH);
   if (ahead.kind === KIND_HAY) {
     // Sliding into hay hides the turkey and throws the farmer off his trail.
-    if (gap < 150) return { jump: false, slideHeld: true };
+    if (gap < 250) return { jump: false, slideHeld: true };
     return { jump: false, slideHeld: false };
   }
   if (ahead.kind === KIND_KNIFE) {
     // The blade hangs low enough to duck under every time: never jump into it.
-    return { jump: false, slideHeld: gap < 260 && turkey.grounded };
+    // R2: 420 (was 260 in R1) so the turkey is already sliding when it lands
+    // from a jump just ahead of the blade.
+    return { jump: false, slideHeld: gap < 420 && turkey.grounded };
   }
   // The turkey stands still while the world scrolls, so the jump must start
   // EARLY enough to rise above the obstacle before it arrives — but late
-  // enough to still be up when its back edge passes. At 0.32x speed the
-  // turkey was still climbing when the fence arrived and ran straight into
-  // it; 0.62x puts the whole crossing inside the high part of the jump.
+  // enough to still be up when its back edge passes. R2: the box is 192
+  // wide, so the whole box + obstacle must fit inside the jump's high
+  // window; 0.62x (R1) jumps far too early and the turkey lands on the
+  // obstacle. 0.2x puts the crossing inside the high part of the jump.
   const speed = runSpeed(world);
-  const jumpAt = speed * 0.62;
-  return { jump: gap < jumpAt && gap > 10 && turkey.grounded, slideHeld: false };
+  const jumpAt = speed * 0.2;
+  return { jump: gapFront < jumpAt && gapFront > 10 && turkey.grounded, slideHeld: false };
 }
 
 /** Run the world forward until `until(world)` is true; returns the events seen. */
@@ -56,7 +64,9 @@ function stageCover(world) {
   for (let i = 0; i < 240; i += 1) {
     worldStep(world, STEP, autopilot(world));
     const oven = world.obstacles.find((o) => o.kind === 'oven' && o.x > world.turkey.x - 40 && o.x < world.turkey.x + 360);
-    if (oven && world.turkey.y < 480) break;
+    // R2: grounded y is 484 now, so "clearly airborne" is y < 380 (feet
+    // above the oven top), not the R1 threshold of 480.
+    if (oven && world.turkey.y < 380) break;
   }
   world.farmer.gap = 62;
   return { screen: SCREEN_PLAY, best: Math.floor(world.score) };
@@ -95,3 +105,7 @@ export function stageShot(name, world) {
   void ESCAPE_METERS;
   return { screen: SCREEN_TITLE, best: 0 };
 }
+
+// Exported for the Node play-test sim (tools/sim.mjs); the game itself only
+// uses stageShot.
+export { autopilot };

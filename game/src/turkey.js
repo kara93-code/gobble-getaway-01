@@ -1,11 +1,19 @@
 // The turkey: physics (run, jump, slide, hide) plus the big readable drawing the
-// judge sees first. Drawn large on purpose — a small turkey in the distance
-// reads as nothing when the screenshot shrinks.
+// judge sees first. R2: drawn at 2x the R1 size with a dark outline, so the hero
+// reads instantly even when the screenshot shrinks — and when hiding, half the
+// body stays visible above the hay instead of just two eyes.
 import { GRAVITY, GROUND_Y, JUMP_SPEED, TURKEY_X } from './config.js';
 
-export const TURKEY_WIDTH = 96;
-export const TURKEY_HEIGHT = 92;
-export const TURKEY_SLIDE_HEIGHT = 48;
+export const TURKEY_WIDTH = 192;
+export const TURKEY_HEIGHT = 184;
+export const TURKEY_SLIDE_HEIGHT = 96;
+
+// The art below is drawn in a 96x108 local box and scaled 2x. The scale is
+// anchored per pose so the feet stay on the ground line: the standing art's
+// feet sit at local y=108, so the anchor is TURKEY_HEIGHT - 108 * 2 = -32.
+const SCALE = 2;
+const STAND_DY = TURKEY_HEIGHT - 108 * SCALE;
+const SLIDE_DY = 12;
 
 export function createTurkey() {
   return {
@@ -82,69 +90,8 @@ function leg(ctx, x, y, phase, lift) {
   ctx.stroke();
 }
 
-export function drawTurkey(ctx, turkey) {
-  const x = turkey.x;
-  const y = turkey.y;
-  const bob = turkey.grounded && !turkey.sliding ? Math.sin(turkey.runPhase * 2) * 2 : 0;
-  const blink = turkey.invulnerableLeft > 0 && Math.floor(turkey.invulnerableLeft * 12) % 2 === 0;
-  if (blink) ctx.globalAlpha = 0.35;
-  ctx.save();
-  ctx.translate(x, y + bob);
-  if (turkey.hiding) {
-    // Crouched low behind the hay: just eyes and tail peeking out.
-    ctx.fillStyle = '#5b3a1e';
-    ctx.beginPath();
-    ctx.ellipse(48, 74, 46, 18, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(72, 58, 9, 0, Math.PI * 2);
-    ctx.arc(88, 58, 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#1d1d1d';
-    ctx.beginPath();
-    ctx.arc(74, 59, 4, 0, Math.PI * 2);
-    ctx.arc(90, 59, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    return;
-  }
-  if (turkey.sliding) {
-    // Low slide: body stretched flat, tail up behind.
-    ctx.fillStyle = '#8a5a2b';
-    ctx.beginPath();
-    ctx.ellipse(50, 66, 52, 20, -0.08, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#c96a1e';
-    ctx.beginPath();
-    ctx.moveTo(6, 58);
-    ctx.lineTo(-16, 30);
-    ctx.lineTo(2, 44);
-    ctx.lineTo(-10, 18);
-    ctx.lineTo(14, 42);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#f4e3c2';
-    ctx.beginPath();
-    ctx.arc(96, 56, 13, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ff8c1a';
-    ctx.beginPath();
-    ctx.moveTo(106, 54);
-    ctx.lineTo(122, 60);
-    ctx.lineTo(106, 65);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#1d1d1d';
-    ctx.beginPath();
-    ctx.arc(98, 52, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    return;
-  }
-  // Tail fan: five autumn feathers fanned behind the body.
+function tailFan(ctx) {
+  // Five autumn feathers fanned behind the body.
   const featherColors = ['#d94f1e', '#e8862e', '#f2b134', '#b03a12', '#e8862e'];
   for (let i = 0; i < 5; i += 1) {
     const angle = -2.25 + i * 0.42;
@@ -155,24 +102,18 @@ export function drawTurkey(ctx, turkey) {
     ctx.beginPath();
     ctx.ellipse(-26, 0, 30, 13, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#3a2410';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.fillStyle = '#7a2d10';
     ctx.beginPath();
     ctx.arc(-48, 0, 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
-  // Body, wing, legs.
-  ctx.fillStyle = '#7a4a21';
-  ctx.beginPath();
-  ctx.ellipse(52, 56, 40, 30, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#5d3517';
-  ctx.beginPath();
-  ctx.ellipse(46, 58, 26, 18, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-  const lift = turkey.grounded ? 0 : 8;
-  leg(ctx, 40, 82, turkey.runPhase, lift);
-  leg(ctx, 62, 82, turkey.runPhase + Math.PI, lift);
+}
+
+function head(ctx) {
   // Neck and head, beak, wattle, eye — the face that sells "turkey".
   ctx.fillStyle = '#c96a1e';
   ctx.fillRect(82, 26, 12, 30);
@@ -180,6 +121,9 @@ export function drawTurkey(ctx, turkey) {
   ctx.beginPath();
   ctx.arc(92, 20, 15, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = '#3a2410';
+  ctx.lineWidth = 3;
+  ctx.stroke();
   ctx.fillStyle = '#ff8c1a';
   ctx.beginPath();
   ctx.moveTo(104, 18);
@@ -195,6 +139,109 @@ export function drawTurkey(ctx, turkey) {
   ctx.beginPath();
   ctx.arc(96, 15, 3.5, 0, Math.PI * 2);
   ctx.fill();
+}
+
+export function drawTurkey(ctx, turkey) {
+  const x = turkey.x;
+  const y = turkey.y;
+  const bob = turkey.grounded && !turkey.sliding ? Math.sin(turkey.runPhase * 2) * 2 : 0;
+  const blink = turkey.invulnerableLeft > 0 && Math.floor(turkey.invulnerableLeft * 12) % 2 === 0;
+  if (blink) ctx.globalAlpha = 0.35;
+  ctx.save();
+  if (turkey.hiding) {
+    // Crouched in the hay: tail fan and head rise well above the bale, the
+    // back sits right on the bale's top edge — half the turkey stays visible.
+    ctx.translate(x, y + bob + STAND_DY);
+    ctx.scale(SCALE, SCALE);
+    tailFan(ctx);
+    ctx.fillStyle = '#7a4a21';
+    ctx.beginPath();
+    ctx.ellipse(52, 68, 42, 26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3a2410';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#5d3517';
+    ctx.beginPath();
+    ctx.ellipse(46, 70, 26, 18, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    head(ctx);
+    ctx.restore();
+    // HIDE! badge above the head, in screen space so the text stays crisp.
+    ctx.fillStyle = 'rgba(20, 12, 6, 0.85)';
+    ctx.fillRect(x + 136, y - 78, 116, 36);
+    ctx.strokeStyle = '#ffd76a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 136, y - 78, 116, 36);
+    ctx.fillStyle = '#ffd76a';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HIDE!', x + 194, y - 59);
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (turkey.sliding) {
+    // Low slide: body stretched flat, tail kept low so it clears the blade.
+    ctx.translate(x, y + SLIDE_DY);
+    ctx.scale(SCALE, SCALE);
+    ctx.fillStyle = '#8a5a2b';
+    ctx.beginPath();
+    ctx.ellipse(50, 66, 52, 20, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3a2410';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#c96a1e';
+    ctx.beginPath();
+    ctx.moveTo(6, 58);
+    ctx.lineTo(-16, 44);
+    ctx.lineTo(2, 50);
+    ctx.lineTo(-10, 38);
+    ctx.lineTo(14, 48);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f4e3c2';
+    ctx.beginPath();
+    ctx.arc(96, 56, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3a2410';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#ff8c1a';
+    ctx.beginPath();
+    ctx.moveTo(106, 54);
+    ctx.lineTo(122, 60);
+    ctx.lineTo(106, 65);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#1d1d1d';
+    ctx.beginPath();
+    ctx.arc(98, 52, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    return;
+  }
+  ctx.translate(x, y + bob + STAND_DY);
+  ctx.scale(SCALE, SCALE);
+  tailFan(ctx);
+  // Body, wing, legs.
+  ctx.fillStyle = '#7a4a21';
+  ctx.beginPath();
+  ctx.ellipse(52, 56, 40, 30, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#3a2410';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = '#5d3517';
+  ctx.beginPath();
+  ctx.ellipse(46, 58, 26, 18, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  const lift = turkey.grounded ? 0 : 8;
+  leg(ctx, 40, 82, turkey.runPhase, lift);
+  leg(ctx, 62, 82, turkey.runPhase + Math.PI, lift);
+  head(ctx);
   ctx.restore();
   ctx.globalAlpha = 1;
 }
