@@ -111,7 +111,7 @@ function runGame() {
 
   function step() {
     if (screen === SCREEN_TITLE) {
-      worldStep(world, STEP, { jump: false, slideHeld: false });
+      worldStep(world, STEP, { jump: false, slideHeld: false, freezeHeld: false });
       if (world.over || world.escaped) resetWorld(world);
       return;
     }

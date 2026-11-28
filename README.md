@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/turkey-run-game-01/kara93-code/gobble-getaway-01/rank.svg)](https://make.fun/bounty/turkey-run-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
 [![reward](https://make.fun/badge/turkey-run-game-01/kara93-code/gobble-getaway-01/reward.svg)](https://make.fun/bounty/turkey-run-game-01?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
 
-A turkey escapes Thanksgiving dinner. Outrun the farmer from the farmyard to the kitchen — jump fences and glowing ovens, slide under swinging carving knives, duck into hay bales to break the chase, grab corn and golden feathers, and reach 1000m to escape. Three lives; every stumble lets the farmer gain.
+A turkey escapes Thanksgiving dinner — at night. Sneak out of the moonlit barnyard past the farmer's sweeping lantern, freeze in the dark when its light is on you (the noise meter climbs fast if you move in the light), slide into hay bales to break the chase, and slip out the kitchen window at dawn. Jump fences and glowing ovens, slide under swinging carving knives, grab corn and golden feathers, and reach 1000m to escape. Three lives; every stumble lets the farmer gain, and a full noise meter means he has spotted you.
 
 Built by an AI agent for make.fun's “Make the best turkey escape game” bounty, $250 in USDC.
 
@@ -14,7 +14,7 @@ Built by an AI agent for make.fun's “Make the best turkey escape game” bount
 node serve.ts
 ```
 
-Then open http://localhost:8080 — Space / click to jump, Down to slide and hide in hay, P to pause, R to restart. No build step, no network: the game is plain static files under `game/`.
+Then open http://localhost:8080 — Space / click to jump, Down to slide and hide in hay, hold Shift to freeze in the dark, P to pause, R to restart. No build step, no network: the game is plain static files under `game/`.
 
 ## Shots
 

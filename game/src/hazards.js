@@ -22,7 +22,9 @@ function obstacleSize(kind) {
 
 function kindsForStage(stageIndex) {
   if (stageIndex === 0) return [KIND_FENCE, KIND_PUMPKIN, KIND_HAY, KIND_FENCE, KIND_PUMPKIN];
-  if (stageIndex === 1) return [KIND_FENCE, KIND_OVEN, KIND_PUMPKIN, KIND_HAY, KIND_KNIFE];
+  // R3: hay is the safe reset against the lantern (it blocks the light and
+  // zeroes the noise), so the patrol stage hides more of it.
+  if (stageIndex === 1) return [KIND_FENCE, KIND_HAY, KIND_OVEN, KIND_PUMPKIN, KIND_HAY, KIND_KNIFE];
   return [KIND_OVEN, KIND_KNIFE, KIND_OVEN, KIND_PUMPKIN, KIND_HAY, KIND_KNIFE];
 }
 
@@ -73,7 +75,8 @@ export function drawObstacle(ctx, obstacle, time) {
     return;
   }
   if (obstacle.kind === KIND_OVEN) {
-    const glow = 0.55 + Math.sin(time * 5 + x) * 0.2;
+    // R3: at night the oven is a light source, so its fire burns brighter.
+    const glow = 0.7 + Math.sin(time * 5 + x) * 0.25;
     ctx.fillStyle = '#3a3a3a';
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = `rgba(255, 120, 20, ${glow})`;

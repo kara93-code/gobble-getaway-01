@@ -1,5 +1,6 @@
 // Keyboard + mouse, nothing else: Space / Up / W / click jumps, Down / S slides
-// (and hides in hay), P pauses, R restarts, Enter confirms. Keys repeat safely:
+// (and hides in hay), Shift / X freezes in the dark (R3: hold still while the
+// lantern sweeps), P pauses, R restarts, Enter confirms. Keys repeat safely:
 // holding jump never double-jumps, because the world only jumps when grounded.
 export const ACTION_JUMP = 1;
 export const ACTION_CONFIRM = 2;
@@ -10,6 +11,7 @@ export function createInput(canvas) {
   let queued = 0;
   let slideHeld = false;
   let jumpHeld = false;
+  let freezeHeld = false;
 
   function pressJump() {
     if (!jumpHeld) queued |= ACTION_JUMP | ACTION_CONFIRM;
@@ -27,6 +29,9 @@ export function createInput(canvas) {
     } else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
       event.preventDefault();
       slideHeld = true;
+    } else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight' || event.code === 'KeyX') {
+      event.preventDefault();
+      freezeHeld = true;
     } else if (event.code === 'KeyP' || event.code === 'Escape') {
       queued |= ACTION_PAUSE;
     } else if (event.code === 'KeyR') {
@@ -38,6 +43,7 @@ export function createInput(canvas) {
   window.addEventListener('keyup', (event) => {
     if (event.code === 'Space' || event.code === 'ArrowUp' || event.code === 'KeyW') releaseJump();
     if (event.code === 'ArrowDown' || event.code === 'KeyS') slideHeld = false;
+    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight' || event.code === 'KeyX') freezeHeld = false;
   });
   canvas.addEventListener('pointerdown', (event) => {
     event.preventDefault();
@@ -53,7 +59,7 @@ export function createInput(canvas) {
       return actions;
     },
     control() {
-      return { jump: (queued & ACTION_JUMP) !== 0, slideHeld };
+      return { jump: (queued & ACTION_JUMP) !== 0, slideHeld, freezeHeld };
     },
     consumeJump() {
       queued &= ~ACTION_JUMP;

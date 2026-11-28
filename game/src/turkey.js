@@ -26,6 +26,8 @@ export function createTurkey() {
     invulnerableLeft: 0,
     runPhase: 0,
     grounded: true,
+    frozen: false,
+    lit: false,
   };
 }
 
@@ -146,6 +148,13 @@ export function drawTurkey(ctx, turkey) {
   const y = turkey.y;
   const bob = turkey.grounded && !turkey.sliding ? Math.sin(turkey.runPhase * 2) * 2 : 0;
   const blink = turkey.invulnerableLeft > 0 && Math.floor(turkey.invulnerableLeft * 12) % 2 === 0;
+  // R3: the escape is at night, so the hero carries its own moonlight — a soft
+  // warm halo that lifts it off the dark background before any of it is drawn.
+  const halo = ctx.createRadialGradient(x + 96, y + 92, 10, x + 96, y + 92, 190);
+  halo.addColorStop(0, 'rgba(255, 220, 140, 0.20)');
+  halo.addColorStop(1, 'rgba(255, 220, 140, 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(x - 100, y - 100, 400, 400);
   if (blink) ctx.globalAlpha = 0.35;
   ctx.save();
   if (turkey.hiding) {
@@ -220,6 +229,18 @@ export function drawTurkey(ctx, turkey) {
     ctx.arc(98, 52, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    if (turkey.frozen && turkey.lit) {
+      // Frozen in the light: a small amber "!" — the beam is on the turkey.
+      ctx.fillStyle = '#ffb020';
+      ctx.beginPath();
+      ctx.arc(x + 96, y - 30, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1d1d1d';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', x + 96, y - 29);
+    }
     ctx.globalAlpha = 1;
     return;
   }
@@ -243,5 +264,16 @@ export function drawTurkey(ctx, turkey) {
   leg(ctx, 62, 82, turkey.runPhase + Math.PI, lift);
   head(ctx);
   ctx.restore();
+  if (turkey.frozen && turkey.lit) {
+    ctx.fillStyle = '#ffb020';
+    ctx.beginPath();
+    ctx.arc(x + 96, y - 30, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1d1d1d';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('!', x + 96, y - 29);
+  }
   ctx.globalAlpha = 1;
 }
